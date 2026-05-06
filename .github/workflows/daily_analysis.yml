@@ -1,9 +1,9 @@
 name: 每日股票分析
 
 on:
-  # 定时触发 - 每天北京时间 18:00 (UTC 10:00)
+  # 定时触发 - 每天北京时间 14:00 (UTC 06:00)
   schedule:
-    - cron: '0 10 * * 1-5'     # 周一到周五，UTC 10:00 = 北京时间 18:00
+    - cron: '0 6 * * 1-5'     # 周一到周五，UTC 06:00 = 北京时间 14:00
   
   # 手动触发
   workflow_dispatch:
@@ -393,4 +393,28 @@ jobs:
           if [ -f "logs/stock_analysis_$(date +%Y%m%d).log" ]; then
             echo "📜 最近日志（最后 30 行）:"
             tail -30 logs/stock_analysis_*.log 2>/dev/null || echo "无日志"
+          fi
+      
+      - name: 提交报告到仓库
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "📤 提交报告到仓库"
+          echo "=========================================="
+          
+          # 配置 git
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "GitHub Actions Bot"
+          
+          # 添加报告和日志
+          git add reports/ logs/ || true
+          
+          # 检查是否有变更
+          if git diff --cached --quiet; then
+            echo "⚠️ 没有新的报告需要提交"
+          else
+            # 提交并推送
+            git commit -m "📊 $(date +%Y-%m-%d) 股票分析报告 [bot]"
+            git push
+            echo "✅ 报告已提交到仓库"
           fi
